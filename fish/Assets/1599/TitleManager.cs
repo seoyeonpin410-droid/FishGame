@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class GameDataManger : MonoBehaviour
+public class TitleManager : MonoBehaviour
 {
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -12,5 +12,9 @@ public class GameDataManger : MonoBehaviour
     void Update()
     {
         
+    }
+    public void GameStartButton()
+    {
+        GameManager.Instance.StartGame();
     }
 }
