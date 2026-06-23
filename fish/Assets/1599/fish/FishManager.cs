@@ -65,7 +65,7 @@ public class FishManager : MonoBehaviour
     {
         currentFishCount--;
 
-        // 부족해진 만큼 실시간으로 바로 스폰 (무한 리필)
+      
         if (currentFishCount < maxFishCount)
         {
             SpawnFish();
