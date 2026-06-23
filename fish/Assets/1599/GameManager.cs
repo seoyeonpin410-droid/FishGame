@@ -1,71 +1,162 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance;
+    private static GameManager _instance;
+    public static GameManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                _instance = Object.FindAnyObjectByType<GameManager>();
+                if (_instance == null)
+                {
+                    GameObject go = new GameObject("GameManager");
+                    _instance = go.AddComponent<GameManager>();
+                }
+            }
+            return _instance;
+        }
+    }
+
     public string titleSceneName = "TitleScene";
     public string gameSceneName = "GameScene";
 
-    // ★ [이곳을 수정] 다른 스크립트에서 텍스트를 넣어줄 수 있도록 public으로 바꿉니다!
-    // (현재 텍스트 타입에 맞춰서 툴이 자동 인식하도록 우선 기본 TMPUGUI로 지정합니다)
-    [HideInInspector] public TextMeshProUGUI scoreText;
+    private TextMeshProUGUI tmpScoreText;
+    private Text legacyScoreText;
+
+    [Header("--- Level System ---")]
+    public int currentLevel = 1;
+    public int currentScore = 0;
+    private int scorePerClick = 10;
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (_instance != null && _instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+
+        _instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
     private void Start()
     {
+        SetupComponents();
         UpdateScoreUI();
     }
 
-    public void StartGame()
+    private void SetupComponents()
     {
-        SceneManager.LoadScene(gameSceneName);
-    }
-
-    public void GameOver()
-    {
-        if (GameDataManager.Instance != null)
+        if (tmpScoreText == null)
         {
-            GameDataManager.Instance.SaveGameResult();
+            var tmpTexts = Object.FindObjectsByType<TextMeshProUGUI>(FindObjectsInactive.Exclude);
+            foreach (var t in tmpTexts)
+            {
+                if (t.name.ToLower().Contains("score") || t.text.ToLower().Contains("score"))
+                {
+                    tmpScoreText = t;
+                    break;
+                }
+            }
         }
-        GoTitle();
-    }
 
-    public void GoTitle()
-    {
-        SceneManager.LoadScene(titleSceneName);
+        if (legacyScoreText == null)
+        {
+            var legacyTexts = Object.FindObjectsByType<Text>(FindObjectsInactive.Exclude);
+            foreach (var t in legacyTexts)
+            {
+                if (t.name.ToLower().Contains("score") || t.text.ToLower().Contains("score"))
+                {
+                    legacyScoreText = t;
+                    break;
+                }
+            }
+        }
     }
 
     public void AddScore(int amount)
     {
+        SetupComponents();
+
+        int dynamicAmount = scorePerClick;
+        currentScore += dynamicAmount;
+
         if (GameDataManager.Instance != null && GameDataManager.Instance.saveData != null)
         {
-            GameDataManager.Instance.saveData.score += amount;
-            Debug.Log("물고기 낚시 성공! + " + amount + "점 | 현재 총 점수: " + GameDataManager.Instance.saveData.score);
-
+            GameDataManager.Instance.saveData.score = currentScore;
+            // 실시간 낚시 중에는 임시 데이터만 저장
             GameDataManager.Instance.SaveJsonData();
-            UpdateScoreUI();
+        }
+
+        Debug.Log($"[점수 획득] +{dynamicAmount}점! | 현재 총 점수: {currentScore} (레벨: {currentLevel})");
+
+        CheckLevelUp();
+        UpdateScoreUI();
+    }
+
+    private void CheckLevelUp()
+    {
+        if (currentScore >= 500 && currentLevel < 3)
+        {
+            currentLevel = 3;
+            scorePerClick = 100;
+        }
+        else if (currentScore >= 100 && currentLevel < 2)
+        {
+            currentLevel = 2;
+            scorePerClick = 50;
         }
     }
 
     public void UpdateScoreUI()
     {
-        if (scoreText != null && GameDataManager.Instance != null && GameDataManager.Instance.saveData != null)
+        int displayScore = currentScore;
+
+        if (GameDataManager.Instance != null && GameDataManager.Instance.saveData != null)
         {
-            scoreText.text = "Score: " + GameDataManager.Instance.saveData.score;
+            displayScore = GameDataManager.Instance.saveData.score;
+            currentScore = displayScore;
         }
+
+        string scoreString = "Score: " + displayScore;
+
+        if (tmpScoreText != null) legacyScoreText = null;
+
+        if (tmpScoreText != null) tmpScoreText.text = scoreString;
+        if (legacyScoreText != null) legacyScoreText.text = scoreString;
+    }
+
+    private void OnEnable() { SceneManager.sceneLoaded += OnSceneLoaded; }
+    private void OnDisable() { SceneManager.sceneLoaded -= OnSceneLoaded; }
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        SetupComponents();
+        UpdateScoreUI();
+    }
+
+    public void StartGame()
+    {
+        // 새 게임 시작 시 이전 판 점수는 인게임에서 일단 0점부터 카운팅 리셋
+        currentScore = 0;
+        SceneManager.LoadScene(gameSceneName);
+    }
+
+    public void GoTitle() { SceneManager.LoadScene(titleSceneName); }
+
+    public void GameOver()
+    {
+        // --- [의도 반영] 게임오버될 때 세이브데이터 리스트로 누적 및 내림차순 정렬 연동 ---
+        if (GameDataManager.Instance != null)
+        {
+            GameDataManager.Instance.SaveGameResult();
+        }
+        GoTitle();
     }
 }

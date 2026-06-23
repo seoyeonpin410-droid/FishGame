@@ -1,13 +1,14 @@
 using System.IO;
+using System.Collections.Generic; // ◀ 리스트 사용을 위해 추가
 using UnityEngine;
 
-// 1. 에러 해결: JSON 변환이 가능하도록 반드시 [System.Serializable]을 붙여야 합니다.
 [System.Serializable]
 public class SaveData
 {
-    // 'deathCount'에 대한 정의가 없다는 에러를 이 변수로 해결합니다.
     public int deathCount = 0;
     public int score = 0;
+    // --- [의도 반영] 역대 기록을 누적할 리스트 추가 ---
+    public List<int> highScores = new List<int>();
 }
 
 public class GameDataManager : MonoBehaviour
@@ -16,9 +17,7 @@ public class GameDataManager : MonoBehaviour
     public GameSettingData gameSettingData;
     public SaveData saveData;
 
-    // 2. 에러 해결: 이미지 속 대소문자와 선언을 맞춰 'isTutorialFinished'를 정확히 선언합니다.
     public int isTutorialFinished;
-
     private string savePath;
 
     private void Awake()
@@ -27,9 +26,7 @@ public class GameDataManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-
             savePath = Application.persistentDataPath + "/saveData.json";
-
             LoadJsonData();
             LoadPlayerPrefs();
         }
@@ -43,7 +40,6 @@ public class GameDataManager : MonoBehaviour
     {
         int baseHp = gameSettingData.startHp;
         int bonusHp = gameSettingData.hpBonusPerDeath;
-
         return baseHp + bonusHp * saveData.deathCount;
     }
 
@@ -59,9 +55,26 @@ public class GameDataManager : MonoBehaviour
         return gameSettingData.playerMoveSpeed;
     }
 
+    // --- [의도 반영] 게임이 끝났을 때 점수 기록 연동 확장 ---
     public void SaveGameResult()
     {
         saveData.deathCount++;
+
+        // 1. 현재 GameManager에 쌓인 진짜 점수를 데이터 리스트에 추가
+        if (GameManager.Instance != null)
+        {
+            saveData.highScores.Add(GameManager.Instance.currentScore);
+        }
+
+        // 2. 리스트를 높은 순서(내림차순)대로 정렬
+        saveData.highScores.Sort((a, b) => b.CompareTo(a));
+
+        // 3. 기록이 너무 무한대로 쌓이지 않게 상위 5개만 컷트
+        if (saveData.highScores.Count > 5)
+        {
+            saveData.highScores.RemoveRange(5, saveData.highScores.Count - 5);
+        }
+
         SaveJsonData();
     }
 
@@ -69,7 +82,6 @@ public class GameDataManager : MonoBehaviour
     {
         string json = JsonUtility.ToJson(saveData, true);
         File.WriteAllText(savePath, json);
-
         Debug.Log("JSON 저장 완료: " + savePath);
     }
 
@@ -79,6 +91,9 @@ public class GameDataManager : MonoBehaviour
         {
             string json = File.ReadAllText(savePath);
             saveData = JsonUtility.FromJson<SaveData>(json);
+
+            // 파일 리스트가 비어있다면 새로 할당 방지
+            if (saveData.highScores == null) saveData.highScores = new List<int>();
         }
         else
         {
@@ -93,31 +108,12 @@ public class GameDataManager : MonoBehaviour
         {
             File.Delete(savePath);
         }
-
         saveData = new SaveData();
         SaveJsonData();
-
         Debug.Log("JSON 저장 데이터 삭제");
     }
 
-    public void LoadPlayerPrefs()
-    {
-        isTutorialFinished = PlayerPrefs.GetInt("TUTORIAL", 0);
-    }
-
-    public void SavePlayerPrefs()
-    {
-        PlayerPrefs.SetInt("TUTORIAL", isTutorialFinished);
-        PlayerPrefs.Save();
-
-        Debug.Log("PlayerPrefs 저장 완료");
-    }
-
-    public void DeletePlayerPrefs()
-    {
-        PlayerPrefs.DeleteKey("TUTORIAL");
-        LoadPlayerPrefs();
-
-        Debug.Log("PlayerPrefs 삭제 완료");
-    }
-} // 3. 에러 해결: 파일 끝(EOF) 괄호 쌍을 정확히 닫아주었습니다.
+    public void LoadPlayerPrefs() { isTutorialFinished = PlayerPrefs.GetInt("TUTORIAL", 0); }
+    public void SavePlayerPrefs() { PlayerPrefs.SetInt("TUTORIAL", isTutorialFinished); PlayerPrefs.Save(); }
+    public void DeletePlayerPrefs() { PlayerPrefs.DeleteKey("TUTORIAL"); LoadPlayerPrefs(); }
+}
