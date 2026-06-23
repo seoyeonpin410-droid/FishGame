@@ -1,5 +1,5 @@
 using System.IO;
-using System.Collections.Generic; // ◀ 리스트 사용을 위해 추가
+using System.Collections.Generic; 
 using UnityEngine;
 
 [System.Serializable]
@@ -7,7 +7,7 @@ public class SaveData
 {
     public int deathCount = 0;
     public int score = 0;
-    // --- [의도 반영] 역대 기록을 누적할 리스트 추가 ---
+
     public List<int> highScores = new List<int>();
 }
 
@@ -55,21 +55,21 @@ public class GameDataManager : MonoBehaviour
         return gameSettingData.playerMoveSpeed;
     }
 
-    // --- [의도 반영] 게임이 끝났을 때 점수 기록 연동 확장 ---
+    
     public void SaveGameResult()
     {
         saveData.deathCount++;
 
-        // 1. 현재 GameManager에 쌓인 진짜 점수를 데이터 리스트에 추가
+        
         if (GameManager.Instance != null)
         {
             saveData.highScores.Add(GameManager.Instance.currentScore);
         }
 
-        // 2. 리스트를 높은 순서(내림차순)대로 정렬
+     
         saveData.highScores.Sort((a, b) => b.CompareTo(a));
 
-        // 3. 기록이 너무 무한대로 쌓이지 않게 상위 5개만 컷트
+    
         if (saveData.highScores.Count > 5)
         {
             saveData.highScores.RemoveRange(5, saveData.highScores.Count - 5);

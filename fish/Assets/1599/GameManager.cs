@@ -143,7 +143,7 @@ public class GameManager : MonoBehaviour
 
     public void StartGame()
     {
-        // 새 게임 시작 시 이전 판 점수는 인게임에서 일단 0점부터 카운팅 리셋
+        
         currentScore = 0;
         SceneManager.LoadScene(gameSceneName);
     }
@@ -152,7 +152,7 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
-        // --- [의도 반영] 게임오버될 때 세이브데이터 리스트로 누적 및 내림차순 정렬 연동 ---
+       
         if (GameDataManager.Instance != null)
         {
             GameDataManager.Instance.SaveGameResult();

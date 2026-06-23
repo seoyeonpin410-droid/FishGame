@@ -42,23 +42,22 @@ public class Fish : MonoBehaviour
     {
         Debug.Log(gameObject.name + " 클릭 성공! 물고기 획득.");
 
-        // 1. 중복 클릭 방지용 컴포넌트 끄기
+       
         GetComponent<SpriteRenderer>().enabled = false;
         GetComponent<Collider2D>().enabled = false;
 
-        // 2. [점수 구현] 새로 만든 GameManager를 통해 10점 추가 및 자동 JSON 저장
+       
         if (GameManager.Instance != null)
         {
             GameManager.Instance.AddScore(10);
         }
 
-        // 3. 물고기 무한 리필 요청
+   
         if (FishManager.Instance != null)
         {
             FishManager.Instance.OnFishDestroyed();
         }
 
-        // 4. 오브젝트 삭제
         Destroy(gameObject);
     }
 
