@@ -35,4 +35,18 @@ public class GameManager : MonoBehaviour
     {
         SceneManager.LoadScene(titleSceneName);
     }
+
+    public void AddScore(int amount)
+    {
+        
+        if (GameDataManager.Instance != null && GameDataManager.Instance.saveData != null)
+        {
+            
+            GameDataManager.Instance.saveData.score += amount;
+            Debug.Log("물고기 낚시 성공! + " + amount + "점 | 현재 총 점수: " + GameDataManager.Instance.saveData.score);
+
+           
+            GameDataManager.Instance.SaveJsonData();
+        }
+    }
 }

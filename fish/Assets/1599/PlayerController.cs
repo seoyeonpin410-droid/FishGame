@@ -143,14 +143,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.CompareTag("Enemy"))
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.GameOver();
-            }
-        }
-    }
+    //private void OnTriggerEnter2D(Collider2D collision)
+    //{
+        // 다시 적이랑 부딪혔을 때의 게임오버 로직만 남겨둡니다.
+        //if (collision.CompareTag("Enemy"))
+        //{
+            //GameManager.Instance.GameOver();
+        //}
+    //}
 }

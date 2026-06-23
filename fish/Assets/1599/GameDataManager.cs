@@ -7,6 +7,7 @@ public class SaveData
 {
     // 'deathCount'에 대한 정의가 없다는 에러를 이 변수로 해결합니다.
     public int deathCount = 0;
+    public int score = 0;
 }
 
 public class GameDataManager : MonoBehaviour

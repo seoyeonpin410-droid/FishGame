@@ -9,4 +9,7 @@ public class GameSettingData : ScriptableObject
 
     public int hpBonusPerDeath = 5;
     public int atkBonusPerDeath = 1;
+
+    public int score = 0;
+    public int highScore = 0;
 }
